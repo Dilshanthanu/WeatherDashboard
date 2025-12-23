@@ -6,18 +6,30 @@
 //
 
 import Foundation
+
 @MainActor
 final class WeatherService {
-    private let apiKey = "8xxxxxxxxxxxxxxxxxxxxx8"
+
+    private let apiKey = "3e6c179a65a13493febd6fc46259fe93"
 
     func fetchWeather(lat: Double, lon: Double) async throws -> WeatherResponse {
-        // Constructs a URL for the OpenWeatherMap OneCall API using the provided coordinates and API key.
-        // Performs an asynchronous network request using URLSession.
-        // Validates the HTTP response status code.
-        // Decodes the received JSON data into a `WeatherResponse` object, using a specific date decoding strategy.
-        // Handles and throws specific `WeatherMapError` types for invalid URL, network failure, invalid response, and decoding errors.
 
-        // DUMMY RETURN TO SATISFY COMPILER - you will have your own when the coding is done
-        preconditionFailure("Stubbed function not implemented. Requires a WeatherResponse return.")
+        let endPoint =
+        "https://api.openweathermap.org/data/3.0/onecall?lat=\(lat)&lon=\(lon)&exclude=minutely,hourly&units=metric&appid=\(apiKey)"
+
+        guard let url = URL(string: endPoint) else {
+            throw ApiError.invalidURL
+        }
+
+        let (data, response) = try await URLSession.shared.data(from: url)
+
+        guard let httpResponse = response as? HTTPURLResponse,
+              httpResponse.statusCode == 200 else {
+            throw ApiError.invalidResponse
+        }
+
+        let decoder = JSONDecoder()
+        decoder.keyDecodingStrategy = .convertFromSnakeCase
+        return try decoder.decode(WeatherResponse.self, from: data)
     }
 }

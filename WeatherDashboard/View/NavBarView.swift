@@ -13,7 +13,7 @@ struct NavBarView: View {
 
     var body: some View {
         VStack(spacing: 0) {
-            // 🔍 Search Bar
+           
             HStack {
                 TextField("Enter location", text: $vm.query)
                     .textFieldStyle(.roundedBorder)

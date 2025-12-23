@@ -8,6 +8,7 @@
 import SwiftUI
 import SwiftData
 import MapKit
+import Combine
 
 @MainActor
 final class MainAppViewModel: ObservableObject {
@@ -22,12 +23,46 @@ final class MainAppViewModel: ObservableObject {
     @Published var activePlaceName: String = ""
     private let defaultPlaceName = "London"
     @Published var selectedTab: Int = 0
+    @Published var debugText: String = ""
+
 
     /// Create and use a WeatherService model (class) to manage fetching and decoding weather data
     private let weatherService = WeatherService()
 
     /// Create and use a LocationManager model (class) to manage address conversion and tourist places
     private let locationManager = LocationManager()
+    
+    func debugWeatherAPI() async {
+        isLoading = true
+        debugText = "⏳ Fetching weather data..."
+
+        do {
+            let response = try await weatherService.fetchWeather(
+                lat: 51.5074,
+                lon: -0.1278
+            )
+
+            let temp = response.current.temp
+            let condition = response.current.weather.first?.description ?? "N/A"
+            let humidity = response.current.humidity
+            let wind = response.current.windSpeed
+
+            debugText = """
+            ✅ Weather API Working
+
+            📍 Location: London
+            🌡 Temperature: \(temp)°C
+            🌥 Condition: \(condition)
+            💧 Humidity: \(humidity)%
+            🌬 Wind Speed: \(wind) m/s
+            """
+
+        } catch {
+            debugText = "❌ Weather API Failed\n\n\(error.localizedDescription)"
+        }
+
+        isLoading = false
+    }
 
     /// Use a context to manage database operations
     private let context: ModelContext
