@@ -10,15 +10,15 @@ import SwiftUI
 struct AppBackgroundGradient: View {
     var body: some View {
         LinearGradient(
-            gradient: Gradient(colors: [
-                Color(red: 0.35, green: 0.50, blue: 0.86),
-                Color(red: 0.24, green: 0.37, blue: 0.66),
-                Color(red: 0.17, green: 0.25, blue: 0.55)
+            gradient: Gradient(stops: [
+                .init(color: Color(red: 0.78, green: 0.86, blue: 0.96), location: 0.0), 
+                .init(color: Color(red: 0.86, green: 0.83, blue: 0.94), location: 0.35),
+                .init(color: Color(red: 0.97, green: 0.86, blue: 0.82), location: 0.7),
+                .init(color: Color(red: 0.92, green: 0.86, blue: 0.94), location: 1.0)
             ]),
             startPoint: .top,
             endPoint: .bottom
         )
         .ignoresSafeArea()
-
     }
 }

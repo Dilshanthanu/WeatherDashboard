@@ -11,33 +11,21 @@ import SwiftData
 struct MapView: View {
     @EnvironmentObject var vm: MainAppViewModel
 
+    // MARK:  add other necessary variables
     var body: some View {
-        VStack(spacing: 16) {
+        VStack{
+            Text("Image shows the information to be presented in this view")
+            Spacer()
+            Image("map")
+                .resizable()
 
-            Button("Test Weather API") {
-                Task {
-                    await vm.debugWeatherAPI()
-                }
-            }
-            .buttonStyle(.borderedProminent)
-
-            if vm.isLoading {
-                ProgressView("Loading weather...")
-            }
-
-            ScrollView {
-                Text(vm.debugText)
-                    .font(.system(.body, design: .monospaced))
-                    .padding()
-                    .frame(maxWidth: .infinity, alignment: .leading)
-            }
 
             Spacer()
         }
-        .padding()
+        .frame(height: 600)
+
     }
 }
-
 #Preview {
     let vm = MainAppViewModel(context: ModelContext(ModelContainer.preview))
     MapView()

@@ -21,20 +21,27 @@ struct CurrentWeatherView: View {
                               .font(Font.largeTitle.bold())
                           Spacer()
                           
-                          Text("Sunday, Oct 12")
+                          Text(DateFormatterUtils.formattedDate(
+                            from: vm.currentWeather?.dt ?? 0,
+                            format: "EEEE, MMM dd"
+                        ))
                               .font(Font.system(size: 14, weight: .light))
                       }
                 VStack{
                     HStack {
-                                       Text("9°C")
+                        Text("\(vm.currentWeather?.temp ?? 0, specifier:"%.0f")°C")
                                            .font(.system(size: 60, weight: .bold))
 
                                        Spacer()
 
-                                       Image(systemName: "cloud.fill")
-                                           .font(.system(size: 60))
+                        if let weather = vm.currentWeather?.weather.first{
+                            Image(systemName: weather.SymbolName)
+                                .font(.system(size: 60))
+                                .foregroundColor(.primary)
+                        }
+
                                    }
-                    Text("Over cast clouds")
+                    Text(vm.currentWeather?.weather.first?.description ?? "")
                         .font(Font.title3.bold())
                         .padding(.top, 16)
                         .frame(maxWidth: .infinity, alignment: .init(horizontal: .leading, vertical: .center))
@@ -68,8 +75,9 @@ struct CurrentWeatherView: View {
                             Text("Pressure")
                                 .font(.callout)
                             Spacer()
-                            Text("1023hPa")
+                            Text("\(vm.currentWeather?.pressure ?? 0) hPa")
                                 .font(.callout)
+
                         }
                         .padding(5)
                         HStack(spacing: 10){
@@ -78,8 +86,13 @@ struct CurrentWeatherView: View {
                             Text("Sunrice")
                                 .font(.callout)
                             Spacer()
-                            Text("06:23")
-                                .font(.callout)
+                            Text(
+                                DateFormatterUtils.formattedDate(
+                                      from: vm.currentWeather?.sunrise ?? 0,
+                                      format: "HH:mm"
+                                  )
+                            )
+                            .font(.callout)
                         }
                         .padding(5)
                         HStack(spacing: 10){
@@ -88,8 +101,14 @@ struct CurrentWeatherView: View {
                             Text("Sunset")
                                 .font(.callout)
                             Spacer()
-                            Text("08:14")
-                                .font(.callout)
+                            Text(
+                                DateFormatterUtils.formattedDate(
+                                       from: vm.currentWeather?.sunset ?? 0,
+                                       format: "HH:mm"
+                                   )
+                            )
+                            .font(.callout)
+
                         }
                         .padding(5)
                         
@@ -100,11 +119,19 @@ struct CurrentWeatherView: View {
                     .padding(.top, 24)
                     
                     HStack(spacing: 10 ){
-                        Image(systemName: "cloud.rain")
-                            .font(.system(size: 60))
-                            .foregroundColor(.blue)
-                        
-                        Text("A bit chilly today - wear a jacket or coat")
+                        if let temp = vm.currentWeather?.temp {
+                            let category = WeatherAdviceCategory.from(
+                                temp: temp,
+                                description: vm.currentWeather?.weather.first?.description ?? ""
+                            )
+
+                            Image(systemName: category.icon)
+                                .font(.system(size: 60))
+                                .foregroundColor(category.color)
+                            Text(category.adviceText)
+                        }
+
+                     
                     }
                     .frame(maxWidth: .infinity, alignment: .leading)
                     .padding(16)
@@ -137,6 +164,7 @@ struct CurrentWeatherView: View {
 
               }
         }
+        
       
 }
 

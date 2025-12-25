@@ -83,6 +83,15 @@ class DateFormatterUtils {
             dateFormatter.dateFormat = "d MMM yyyy 'at' h a"
             return dateFormatter.string(from: Date(timeIntervalSince1970: timestamp))
     }
+    
+    static func weekdayName(from timestamp: TimeInterval) -> String {
+        let date = Date(timeIntervalSince1970: timestamp)
+        let formatter = DateFormatter()
+        formatter.locale = Locale.current
+        formatter.dateFormat = "EEEE"
+        return formatter.string(from: date)
+    }
+
 
 }
 

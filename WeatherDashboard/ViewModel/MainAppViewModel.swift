@@ -13,8 +13,8 @@ import Combine
 @MainActor
 final class MainAppViewModel: ObservableObject {
     @Published var query = ""
-    @Published var currentWeather: Weather?
-    @Published var forecast: [Weather] = []
+    @Published var currentWeather: Current?
+    @Published var forecast: [Daily] = []
     @Published var pois: [AnnotationModel] = []
     @Published var mapRegion = MKCoordinateRegion()
     @Published var visited: [Place] = []
@@ -32,38 +32,6 @@ final class MainAppViewModel: ObservableObject {
     /// Create and use a LocationManager model (class) to manage address conversion and tourist places
     private let locationManager = LocationManager()
     
-    func debugWeatherAPI() async {
-        isLoading = true
-        debugText = "⏳ Fetching weather data..."
-
-        do {
-            let response = try await weatherService.fetchWeather(
-                lat: 51.5074,
-                lon: -0.1278
-            )
-
-            let temp = response.current.temp
-            let condition = response.current.weather.first?.description ?? "N/A"
-            let humidity = response.current.humidity
-            let wind = response.current.windSpeed
-
-            debugText = """
-            ✅ Weather API Working
-
-            📍 Location: London
-            🌡 Temperature: \(temp)°C
-            🌥 Condition: \(condition)
-            💧 Humidity: \(humidity)%
-            🌬 Wind Speed: \(wind) m/s
-            """
-
-        } catch {
-            debugText = "❌ Weather API Failed\n\n\(error.localizedDescription)"
-        }
-
-        isLoading = false
-    }
-
     /// Use a context to manage database operations
     private let context: ModelContext
 
@@ -101,7 +69,6 @@ final class MainAppViewModel: ObservableObject {
         }
         Task {
             do {
-                // MARK: call loadLocation(byName:)
                 try await loadLocation(byName: city)
                 query = ""
             } catch {
@@ -110,8 +77,19 @@ final class MainAppViewModel: ObservableObject {
         }
     }
     func loadDefaultLocation() async {
-        // Attempts to select and load the hardcoded default location name.
-        // If an error occurs during selection, sets an app error.
+        isLoading = true;
+        do {
+            let response = try await weatherService.fetchWeather(
+                lat: 7.8731,
+                lon: 80.7718
+            )
+            currentWeather = response.current
+            forecast = response.daily
+            isLoading = false
+        }catch {
+            ApiError.invalidResponse
+            isLoading = false
+        }
     }
 
     func search() async throws {
