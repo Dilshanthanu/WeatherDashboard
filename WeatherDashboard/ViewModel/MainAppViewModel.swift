@@ -23,7 +23,6 @@ final class MainAppViewModel: ObservableObject {
     @Published var activePlaceName: String = ""
     private let defaultPlaceName = "London"
     @Published var selectedTab: Int = 0
-    @Published var debugText: String = ""
 
 
     /// Create and use a WeatherService model (class) to manage fetching and decoding weather data
@@ -77,11 +76,15 @@ final class MainAppViewModel: ObservableObject {
         }
     }
     func loadDefaultLocation() async {
+        
         isLoading = true;
         do {
+            let london = try await locationManager.geocodeAddress(defaultPlaceName)
+            activePlaceName = london.name
+            pois = try await locationManager.findPOIs(lat: london.lat, lon: london.lon)
             let response = try await weatherService.fetchWeather(
-                lat: 7.8731,
-                lon: 80.7718
+                lat: london.lat,
+                lon: london.lon
             )
             currentWeather = response.current
             forecast = response.daily
@@ -106,6 +109,23 @@ final class MainAppViewModel: ObservableObject {
         // 5. Inserts the new `Place` into the `visited` array and saves the context.
         // 6. Updates UI by setting `pois`, `activePlaceName`, and focusing the map.
         // 7. If any step fails, logs the error and reverts to the default location with an alert.
+        
+        isLoading = true;
+        do {
+            let location = try await locationManager.geocodeAddress(byName)
+            activePlaceName = location.name
+            pois = try await locationManager.findPOIs(lat: location.lat, lon: location.lon)
+            let response = try await weatherService.fetchWeather(
+                lat: location.lat,
+                lon: location.lon
+            )
+            currentWeather = response.current
+            forecast = response.daily
+            isLoading = false
+        }catch {
+            ApiError.invalidResponse
+            isLoading = false
+        }
     }
 
     func loadLocation(fromPlace place: Place) async{

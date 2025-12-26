@@ -108,7 +108,7 @@ struct ForecastView: View {
                 
                 VStack(alignment: .leading, spacing: 4) {
                     
-                    Text("8 Day Forecast - London")
+                    Text("8 Day Forecast - \(vm.activePlaceName)")
                         .font(.system(size: 28, weight: .semibold))
                         .padding(.bottom, 4)
                     

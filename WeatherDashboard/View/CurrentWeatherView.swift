@@ -17,7 +17,7 @@ struct CurrentWeatherView: View {
             AppBackgroundGradient()
             VStack{
                       HStack{
-                          Text("Londan")
+                          Text(vm.activePlaceName)
                               .font(Font.largeTitle.bold())
                           Spacer()
                           
@@ -118,33 +118,58 @@ struct CurrentWeatherView: View {
                     }
                     .padding(.top, 24)
                     
-                    HStack(spacing: 10 ){
+                    HStack(alignment: .top, spacing: 14) {
+
                         if let temp = vm.currentWeather?.temp {
                             let category = WeatherAdviceCategory.from(
                                 temp: temp,
                                 description: vm.currentWeather?.weather.first?.description ?? ""
                             )
 
+                            // ICON
                             Image(systemName: category.icon)
-                                .font(.system(size: 60))
-                                .foregroundColor(category.color)
-                            Text(category.adviceText)
-                        }
+                                .font(.system(size: 48))
+                                .foregroundStyle(
+                                    LinearGradient(
+                                        colors: [category.color, category.color.opacity(0.6)],
+                                        startPoint: .top,
+                                        endPoint: .bottom
+                                    )
+                                )
+                                .padding(.top, 4)
 
-                     
+                            // TEXT CONTENT
+                            VStack(alignment: .leading, spacing: 6) {
+
+                                Text(category.adviceText)
+                                    .font(.system(size: 16, weight: .medium))
+                                    .foregroundStyle(.primary)
+                                    .fixedSize(horizontal: false, vertical: true)
+                            }
+                        }
                     }
                     .frame(maxWidth: .infinity, alignment: .leading)
-                    .padding(16)
-                    .background(Color.accentColor.opacity(0.15))
-                    .cornerRadius(20)
-                    .padding(.top, 20) 
+                    .padding(18)
+                    .background(
+                        LinearGradient(
+                            colors: [
+                                Color.accentColor.opacity(0.18),
+                                Color.accentColor.opacity(0.08)
+                            ],
+                            startPoint: .topLeading,
+                            endPoint: .bottomTrailing
+                        )
+                    )
+                    .cornerRadius(22)
+                    .shadow(color: Color.black.opacity(0.08), radius: 8, x: 0, y: 4)
+                    .padding(.top, 20)
+
                     
                     
                     
                     
                     
                 }
-                .padding()
                 .padding(20)
                 .background(
                     RoundedRectangle(cornerRadius: 20)
