@@ -12,6 +12,7 @@ enum WeatherMapError: Error, LocalizedError, Identifiable {
     case geocodingFailed(String)
     case invalidResponse(statusCode: Int)
     case missingData(message: String)
+    case deleteFailed(String)
     var id: String { localizedDescription }
 
     var errorDescription: String? {
@@ -28,6 +29,9 @@ enum WeatherMapError: Error, LocalizedError, Identifiable {
             return "The server returned an error code: \(code). Data is unavailable."
         case .missingData(let message):
             return "Missing or invalid data: \(message)"
+        case .deleteFailed(let message):
+            return "Failed to delete: \(message)"
         }
+        
     }
 }

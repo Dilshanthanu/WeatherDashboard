@@ -15,19 +15,24 @@ final class Place {
     var name: String
     var latitude: Double
     var longitude: Double
-    var lastUsedAt: Date 
+    var lastUsedAt: Date
+    var poi: [AnnotationModel]
 
     init(
         id: UUID = UUID(),
         name: String,
         latitude: Double,
-        longitude: Double
+        longitude: Double,
+        poi: [AnnotationModel] = []
+        
     ) {
         self.id = id
         self.name = name
         self.latitude = latitude
         self.longitude = longitude
         self.lastUsedAt = .now
+        self.poi = poi
+        
     }
 }
 
@@ -37,12 +42,14 @@ final class AnnotationModel: Identifiable {
     var name: String
     var latitude: Double
     var longitude: Double
+    var place: Place?
 
 
-    init(name: String, latitude: Double, longitude: Double) {
+    init(name: String, latitude: Double, longitude: Double , place: Place? = nil) {
         self.name = name
         self.latitude = latitude
         self.longitude = longitude
+        self.place = place
 
     }
 

@@ -65,9 +65,9 @@ enum TempType: String {
 /// A single temperature reading for the chart or list.
 private struct TempData: Identifiable {
     let id = UUID()
-    let time: Date          // e.g., forecast date
-    let type: TempType        // e.g., "High" or "Low"
-    let value: Double       // numeric value
+    let time: Date      
+    let type: TempType
+    let value: Double
     let category: TempCategory
 }
 

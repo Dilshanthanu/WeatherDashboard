@@ -64,6 +64,7 @@ final class MainAppViewModel: ObservableObject {
         let city = query.trimmingCharacters(in: .whitespacesAndNewlines)
         guard !city.isEmpty else {
             appError = .missingData(message: "Please enter a valid location.")
+            
             return
         }
         Task {
@@ -90,71 +91,185 @@ final class MainAppViewModel: ObservableObject {
             forecast = response.daily
             isLoading = false
         }catch {
-            ApiError.invalidResponse
             isLoading = false
+        await revertToDefaultWithAlert(
+                        message: "Unable to load defult location. Please try again."
+        )
         }
     }
 
-    func search() async throws {
+    func search(for text: String) async throws {
         // If the query is not empty, calls `select(placeNamed:)` with the current query string.
+        let query = text.addingPercentEncoding(withAllowedCharacters: .urlQueryAllowed) ?? ""
+           if let url = URL(string: "https://www.google.com/search?q=\(query)") {
+               await UIApplication.shared.open(url)
+           }
     }
 
     /// Validate weather before saving a new place; create POI children once.
     func loadLocation(byName: String) async throws {
-        // Sets loading state, then attempts to load data for the given place name.
-        // 1. Checks if the place is already in `visited` and, if so, loads all data for the existing `Place` object, updates its `lastUsedAt`, and saves the context.
-        // 2. Otherwise, geocodes the fresh place name using `locationManager`.
-        // 3. Fetches weather data using `weatherService` as a fail-fast check.
-        // 4. Finds Points of Interest (POIs) using `locationManager`, converts them to `AnnotationModel`s, and associates them with the new `Place`.
-        // 5. Inserts the new `Place` into the `visited` array and saves the context.
-        // 6. Updates UI by setting `pois`, `activePlaceName`, and focusing the map.
-        // 7. If any step fails, logs the error and reverts to the default location with an alert.
-        
         isLoading = true;
-        do {
-            let location = try await locationManager.geocodeAddress(byName)
-            activePlaceName = location.name
-            pois = try await locationManager.findPOIs(lat: location.lat, lon: location.lon)
-            let response = try await weatherService.fetchWeather(
-                lat: location.lat,
-                lon: location.lon
+        if let existingPlace = visited.first(where: {
+            $0.name.lowercased() == byName.lowercased()
+        }) {
+            await loadLocation(fromPlace: existingPlace)
+                   isLoading = false
+                   return
+        }else{
+            
+            do {
+                let location = try await locationManager.geocodeAddress(byName)
+                let response = try await weatherService.fetchWeather(
+                    lat: location.lat,
+                    lon: location.lon
+                )
+               
+                let visitPois = try await locationManager.findPOIs(lat: location.lat, lon: location.lon)
+                
+                let visitPlace = Place(
+                    name: location.name,
+                    latitude: location.lat,
+                    longitude: location.lon,
+                )
+                
+                context.insert(visitPlace)
+                try context.save()
+                visited.insert(visitPlace, at: 0)
+
+                try await loadAll(for: visitPlace)
+
+                isLoading = false
+            }catch {
+                isLoading = false
+            await revertToDefaultWithAlert(
+                            message: "Unable to load location. Reverting to London."
             )
-            currentWeather = response.current
-            forecast = response.daily
-            isLoading = false
-        }catch {
-            ApiError.invalidResponse
-            isLoading = false
+            }
+        }
+
+    }
+
+    func loadLocation(fromPlace place: Place) async {
+        do {
+            try await loadAll(for: place)
+        } catch {
+            await revertToDefaultWithAlert(
+                message: "Failed to load saved location. Reverting to London."
+            )
         }
     }
 
-    func loadLocation(fromPlace place: Place) async{
-        // Sets loading state, then attempts to load all data for an existing `Place` object.
-        // Updates the place's `lastUsedAt` and saves the context upon success.
-        // Catches and sets `appError` for any failure during the load process.
+    private func revertToDefaultWithAlert(message: String) async {
+
+        appError = .missingData(message: message)
+        await loadDefaultLocation()
     }
 
-    private func revertToDefaultWithAlert(message: String) async {
-        // Sets an `appError` with the given message, then calls `loadDefaultLocation()` to switch back to the default.
-    }
+
 
     func focus(on coordinate: CLLocationCoordinate2D, zoom: Double = 0.02) {
-        // Animates the map region to center on the given coordinate with a specified zoom level (span).
+        withAnimation {
+            mapRegion = MKCoordinateRegion(
+                center: coordinate,
+                span: MKCoordinateSpan(
+                    latitudeDelta: zoom,
+                    longitudeDelta: zoom
+                )
+            )
+        }
     }
 
     private func loadAll(for place: Place) async throws {
-        // Sets `activePlaceName` and prints a loading message.
-        // Always refreshes weather data from the API.
-        // Checks if the `Place` object has existing annotations (POIs).
-        // If annotations are empty, fetches new POIs via `MKLocalSearch`, converts them to `AnnotationModel`s, adds them to the `Place`, saves the context, and sets `self.pois`.
-        // If annotations exist, uses the cached list for `self.pois`.
-        // Calls `focus(on:zoom:)` to update the map view.
-        // Ensures the place is at the top of the `visited` list (if not already).
+
+        isLoading = true
+        activePlaceName = place.name
+
+        do {
+            let response = try await weatherService.fetchWeather(
+                lat: place.latitude,
+                lon: place.longitude
+            )
+            currentWeather = response.current
+            forecast = response.daily
+            if place.poi.isEmpty {
+               
+                let fetchedAnnotations = try await locationManager.findPOIs(
+                    lat: place.latitude,
+                    lon: place.longitude
+                )
+
+                for annotation in fetchedAnnotations {
+                    let poi = AnnotationModel(
+                        name: annotation.name,
+                        latitude: annotation.latitude,
+                        longitude: annotation.longitude,
+                        place: place
+                    )
+                    place.poi.append(poi)
+                }
+                focus(
+                    on: CLLocationCoordinate2D(
+                        latitude: place.latitude,
+                        longitude: place.longitude
+                    )
+                )
+
+                try context.save()
+
+                self.pois = fetchedAnnotations
+
+            } else {
+               
+                self.pois = place.poi.map { poi in
+                    AnnotationModel(
+                        name: poi.name,
+                        latitude: poi.latitude,
+                        longitude: poi.longitude
+                    )
+                }
+            }
+            place.lastUsedAt = Date()
+            try context.save()
+            visited.removeAll { $0.id == place.id }
+            visited.insert(place, at: 0)
+
+            isLoading = false
+
+        } catch {
+            isLoading = false
+            await revertToDefaultWithAlert(
+                message: "Failed to load location data. Reverting to London."
+            )
+        }
     }
 
     func delete(place: Place) {
-        // Deletes the given `Place` object from the ModelContext and removes it from the `visited` array.
-        // Attempts to save the context.
+
+        context.delete(place)
+
+        do {
+            try context.save()
+
+            visited.removeAll { $0.id == place.id }
+
+            if activePlaceName == place.name {
+                if let nextPlace = visited.first {
+                    Task {
+                        await loadLocation(fromPlace: nextPlace)
+                    }
+                } else {
+                    Task {
+                        await loadDefaultLocation()
+                    }
+                }
+            }
+
+        } catch {
+            appError = .deleteFailed(
+                "Failed to delete saved place."
+            )
+        }
     }
+
 
 }

@@ -12,6 +12,7 @@ import SwiftData
 struct WeatherDashboardApp: App {
 
     @StateObject private var vm: MainAppViewModel
+    
     private let container: ModelContainer
 
     init() {

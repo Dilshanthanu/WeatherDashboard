@@ -68,6 +68,7 @@ final class LocationManager {
                         name: name,
                         latitude: item.placemark.coordinate.latitude,
                         longitude: item.placemark.coordinate.longitude
+                        
                     )
                 }
                 .prefix(limit)

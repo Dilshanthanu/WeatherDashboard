@@ -1,43 +1,47 @@
-//
-//  MapView.swift
-//  WeatherDashboardTemplate
-//
-//  Created by girish lukka on 18/10/2025.
-//
-
 import SwiftUI
-import SwiftData
 import MapKit
+import SwiftData
 
 struct MapView: View {
     @EnvironmentObject var vm: MainAppViewModel
-    @State private var searchText: String = ""
+    @State private var cameraPosition: MapCameraPosition = .automatic
 
     var body: some View {
         ZStack {
             AppBackgroundGradient()
 
             VStack(spacing: 0) {
-                ZStack(alignment: .top) {
 
-                    Map {
-                        UserAnnotation()
-                        ForEach(vm.pois) { poi in
-                            Marker(
-                                poi.name,
-                                coordinate: CLLocationCoordinate2D(
-                                    latitude: poi.latitude,
-                                    longitude: poi.longitude
-                                )
+                Map(position: $cameraPosition) {
+                    UserAnnotation()
+                    ForEach(vm.pois) { poi in
+                        Marker(
+                            poi.name,
+                            coordinate: CLLocationCoordinate2D(
+                                latitude: poi.latitude,
+                                longitude: poi.longitude
                             )
-                        }
+                        )
                     }
-                    .frame(height: 360)
+                }
+                .frame(height: 360)
+                .onChange(of: vm.pois) { _, newPois in
+                    guard let first = newPois.first else { return }
 
-                    // Search bar overlay
+                    cameraPosition = .region(
+                        MKCoordinateRegion(
+                            center: CLLocationCoordinate2D(
+                                latitude: first.latitude,
+                                longitude: first.longitude
+                            ),
+                            span: MKCoordinateSpan(
+                                latitudeDelta: 0.05,
+                                longitudeDelta: 0.05
+                            )
+                        )
+                    )
                 }
 
-                // MARK: - TITLE STRIP
                 Text("Top 5 Tourist Attractions in \(vm.activePlaceName)")
                     .font(.headline)
                     .foregroundColor(.white)
@@ -45,7 +49,6 @@ struct MapView: View {
                     .padding(.vertical, 10)
                     .background(Color.purple)
 
-                // MARK: - POI LIST
                 ScrollView {
                     VStack(alignment: .leading, spacing: 14) {
                         ForEach(vm.pois) { poi in
@@ -56,7 +59,12 @@ struct MapView: View {
 
                                 Text(poi.name)
                                     .font(.body)
-                                    .foregroundColor(.primary)
+                                    .onLongPressGesture {
+                                        Task {
+                                                 try await vm.search(for: poi.name)
+                                              }
+                                       }
+
 
                                 Spacer()
                             }
@@ -67,10 +75,4 @@ struct MapView: View {
             }
         }
     }
-}
-
-#Preview {
-    let vm = MainAppViewModel(context: ModelContext(ModelContainer.preview))
-    MapView()
-        .environmentObject(vm)
 }
