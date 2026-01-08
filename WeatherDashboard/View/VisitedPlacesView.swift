@@ -1,5 +1,5 @@
 //
-//  VisitedPLacesView.swift
+//  VisitedPlacesView.swift
 //  WeatherDashboardTemplate
 //
 //  Created by girish lukka on 18/10/2025.
@@ -10,6 +10,7 @@ import SwiftData
 
 struct VisitedPlacesView: View {
     @EnvironmentObject var vm: MainAppViewModel
+    @Environment(\.colorScheme) private var colorScheme
 
     var body: some View {
         ZStack {
@@ -17,6 +18,7 @@ struct VisitedPlacesView: View {
 
             VStack(alignment: .leading, spacing: 16) {
 
+                // MARK: - Header
                 HStack(spacing: 10) {
                     Text("Visited Places")
                         .font(.system(size: 28, weight: .semibold))
@@ -30,6 +32,7 @@ struct VisitedPlacesView: View {
                 .padding(.horizontal)
                 .padding(.top, 10)
 
+                // MARK: - Content
                 ZStack {
                     if vm.visited.isEmpty {
                         NoDataView(
@@ -45,9 +48,9 @@ struct VisitedPlacesView: View {
                                         .font(.headline)
                                         .onLongPressGesture {
                                             Task {
-                                                     try await vm.search(for: place.name)
-                                                  }
-                                           }
+                                                try await vm.search(for: place.name)
+                                            }
+                                        }
 
                                     Text(
                                         String(
@@ -57,16 +60,22 @@ struct VisitedPlacesView: View {
                                         )
                                     )
                                     .font(.subheadline)
-                                    .foregroundColor(.secondary)
+                                    .foregroundStyle(.secondary)
                                 }
-                                .onTapGesture {
-                                    Task{
-                                        try await  vm.loadLocation(byName: place.name)
-                                    }
                                 
-                                       }
                                 .padding(.vertical, 6)
-                                .listRowBackground(Color.clear)
+                                .contentShape(Rectangle())
+                                .onTapGesture {
+                                    Task {
+                                        try await vm.loadLocation(byName: place.name)
+                                    }
+                                }
+                                .listRowBackground(
+                                    Color.white.opacity(
+                                        colorScheme == .dark ? 0.04 : 0.12
+                                    )
+                                )
+                                .cornerRadius(8)
                             }
                             .onDelete { indexes in
                                 for index in indexes {
@@ -77,6 +86,22 @@ struct VisitedPlacesView: View {
                         }
                         .listStyle(.plain)
                         .scrollContentBackground(.hidden)
+                        .background(
+                            RoundedRectangle(cornerRadius: 20)
+                                .fill(
+                                    Color.white.opacity(
+                                        colorScheme == .dark ? 0.06 : 0.12
+                                    )
+                                )
+                        )
+                        .shadow(
+                            color: .black.opacity(
+                                colorScheme == .dark ? 0.45 : 0.15
+                            ),
+                            radius: 10,
+                            y: 6
+                        )
+                        .padding(.horizontal)
                     }
                 }
                 .frame(maxWidth: .infinity, maxHeight: .infinity)
@@ -85,9 +110,16 @@ struct VisitedPlacesView: View {
     }
 }
 
-
-#Preview {
+#Preview("Light Mode") {
     let vm = MainAppViewModel(context: ModelContext(ModelContainer.preview))
     VisitedPlacesView()
         .environmentObject(vm)
+        .preferredColorScheme(.light)
+}
+
+#Preview("Dark Mode") {
+    let vm = MainAppViewModel(context: ModelContext(ModelContainer.preview))
+    VisitedPlacesView()
+        .environmentObject(vm)
+        .preferredColorScheme(.dark)
 }

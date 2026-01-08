@@ -18,14 +18,14 @@ final class WeatherService {
         "https://api.openweathermap.org/data/3.0/onecall?lat=\(lat)&lon=\(lon)&exclude=minutely,hourly&units=metric&appid=\(apiKey)"
 
         guard let url = URL(string: endPoint) else {
-            throw ApiError.invalidURL
+            throw WeatherMapError.invalidURL("Invalid Url")
         }
 
         let (data, response) = try await URLSession.shared.data(from: url)
 
         guard let httpResponse = response as? HTTPURLResponse,
               httpResponse.statusCode == 200 else {
-            throw ApiError.invalidResponse
+            throw WeatherMapError.invalidResponse(statusCode: (response as? HTTPURLResponse)?.statusCode ?? 0)
         }
 
         let decoder = JSONDecoder()

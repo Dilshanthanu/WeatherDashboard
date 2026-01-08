@@ -8,125 +8,108 @@
 import SwiftUI
 import SwiftData
 
-
 struct CurrentWeatherView: View {
     @EnvironmentObject var vm: MainAppViewModel
+    @Environment(\.colorScheme) private var colorScheme
 
     var body: some View {
-        ZStack{
+        ZStack {
             AppBackgroundGradient()
-            VStack{
-                      HStack{
-                          Text(vm.activePlaceName)
-                              .font(Font.largeTitle.bold())
-                          Spacer()
-                          
-                          Text(DateFormatterUtils.formattedDate(
+
+            VStack {
+                // MARK: - Header
+                HStack {
+                    Text(vm.activePlaceName)
+                        .font(.largeTitle.bold())
+
+                    Spacer()
+
+                    Text(
+                        DateFormatterUtils.formattedDate(
                             from: vm.currentWeather?.dt ?? 0,
                             format: "EEEE, MMM dd"
-                        ))
-                              .font(Font.system(size: 14, weight: .light))
-                      }
-                VStack{
+                        )
+                    )
+                    .font(.system(size: 14, weight: .light))
+                    .foregroundStyle(.secondary)
+                }
+
+                VStack {
+                    // MARK: - Temperature & Icon
                     HStack {
-                        Text("\(vm.currentWeather?.temp ?? 0, specifier:"%.0f")°C")
-                                           .font(.system(size: 60, weight: .bold))
+                        Text("\(vm.currentWeather?.temp ?? 0, specifier: "%.0f")°C")
+                            .font(.system(size: 60, weight: .bold))
 
-                                       Spacer()
+                        Spacer()
 
-                        if let weather = vm.currentWeather?.weather.first{
+                        if let weather = vm.currentWeather?.weather.first {
                             Image(systemName: weather.SymbolName)
                                 .font(.system(size: 60))
-                                .foregroundColor(.primary)
+                                .foregroundStyle(.primary)
                         }
-
-                                   }
-                    Text(vm.currentWeather?.weather.first?.description ?? "")
-                        .font(Font.title3.bold())
-                        .padding(.top, 16)
-                        .frame(maxWidth: .infinity, alignment: .init(horizontal: .leading, vertical: .center))
-                    HStack(spacing: 10) {
-                        Image(systemName: "arrow.up")
-                            .font(.title3)
-                            .foregroundColor(.primary)
-                        Text("12°")
-                            .font(.title3)
-                            .foregroundColor(.primary)
-                        
-                        Image(systemName: "arrow.down")
-                            .font(.title3)
-                            .foregroundColor(.primary)
-                            .font(.caption)
-                        Text("6°")
-                            .font(.title3)
-                            .foregroundColor(.primary)
                     }
+
+                    Text(
+                        TextFormatter.capitalizeWords(
+                            vm.currentWeather?.weather.first?.description ?? ""
+                        )
+                    )
+                    .font(.title3.bold())
                     .padding(.top, 16)
                     .frame(maxWidth: .infinity, alignment: .leading)
-                    
-                    VStack{
+
+                    // MARK: - Min / Max
+                    HStack(spacing: 10) {
+                        Image(systemName: "arrow.up")
+                        Text(TextFormatter.formatTemp(vm.forecast.first?.temp.max))
+
+                        Image(systemName: "arrow.down")
+                        Text(TextFormatter.formatTemp(vm.forecast.first?.temp.min))
+                    }
+                    .font(.title3)
+                    .padding(.top, 16)
+                    .frame(maxWidth: .infinity, alignment: .leading)
+
+                    // MARK: - Details
+                    VStack {
                         Text("Details")
-                            .frame(maxWidth: .infinity, alignment: .leading)
                             .font(.title3)
-                        
-                        HStack(spacing: 10){
-                            Image(systemName: "gauge")
-                                .foregroundColor(Color.blue)
-                            Text("Pressure")
-                                .font(.callout)
-                            Spacer()
-                            Text("\(vm.currentWeather?.pressure ?? 0) hPa")
-                                .font(.callout)
+                            .frame(maxWidth: .infinity, alignment: .leading)
 
-                        }
-                        .padding(5)
-                        HStack(spacing: 10){
-                            Image(systemName: "sunrise")
-                                .foregroundColor(Color.blue)
-                            Text("Sunrice")
-                                .font(.callout)
-                            Spacer()
-                            Text(
-                                DateFormatterUtils.formattedDate(
-                                      from: vm.currentWeather?.sunrise ?? 0,
-                                      format: "HH:mm"
-                                  )
-                            )
-                            .font(.callout)
-                        }
-                        .padding(5)
-                        HStack(spacing: 10){
-                            Image(systemName: "sunset")
-                                .foregroundColor(Color.blue)
-                            Text("Sunset")
-                                .font(.callout)
-                            Spacer()
-                            Text(
-                                DateFormatterUtils.formattedDate(
-                                       from: vm.currentWeather?.sunset ?? 0,
-                                       format: "HH:mm"
-                                   )
-                            )
-                            .font(.callout)
+                        detailRow(
+                            icon: "gauge",
+                            title: "Pressure",
+                            value: "\(vm.currentWeather?.pressure ?? 0) hPa"
+                        )
 
-                        }
-                        .padding(5)
-                        
-                        
-                        
-                            
+                        detailRow(
+                            icon: "sunrise",
+                            title: "Sunrise",
+                            value: DateFormatterUtils.formattedDate(
+                                from: vm.currentWeather?.sunrise ?? 0,
+                                format: "HH:mm"
+                            )
+                        )
+
+                        detailRow(
+                            icon: "sunset",
+                            title: "Sunset",
+                            value: DateFormatterUtils.formattedDate(
+                                from: vm.currentWeather?.sunset ?? 0,
+                                format: "HH:mm"
+                            )
+                        )
                     }
                     .padding(.top, 24)
-                    
-                    HStack(alignment: .top, spacing: 14) {
 
-                        if let temp = vm.currentWeather?.temp {
-                            let category = WeatherAdviceCategory.from(
-                                temp: temp,
-                                description: vm.currentWeather?.weather.first?.description ?? ""
-                            )
+                    // MARK: - Weather Advice Card
+                    if let temp = vm.currentWeather?.temp {
+                        let category = WeatherAdviceCategory.from(
+                            temp: temp,
+                            description: vm.currentWeather?.weather.first?.description ?? ""
+                        )
 
-                            // ICON
+                        HStack(alignment: .top, spacing: 14) {
                             Image(systemName: category.icon)
                                 .font(.system(size: 48))
                                 .foregroundStyle(
@@ -136,65 +119,95 @@ struct CurrentWeatherView: View {
                                         endPoint: .bottom
                                     )
                                 )
-                                .padding(.top, 4)
 
-                            // TEXT CONTENT
                             VStack(alignment: .leading, spacing: 6) {
-
                                 Text(category.adviceText)
                                     .font(.system(size: 16, weight: .medium))
-                                    .foregroundStyle(.primary)
-                                    .fixedSize(horizontal: false, vertical: true)
                             }
                         }
-                    }
-                    .frame(maxWidth: .infinity, alignment: .leading)
-                    .padding(18)
-                    .background(
-                        LinearGradient(
-                            colors: [
-                                Color.accentColor.opacity(0.18),
-                                Color.accentColor.opacity(0.08)
-                            ],
-                            startPoint: .topLeading,
-                            endPoint: .bottomTrailing
+                        .padding(18)
+                        .frame(maxWidth: .infinity, alignment: .leading)
+                        .background(
+                            RoundedRectangle(cornerRadius: 18)
+                                .fill(
+                                    colorScheme == .dark
+                                    ? .thinMaterial
+                                    : .ultraThinMaterial
+                                )
                         )
-                    )
-                    .cornerRadius(22)
-                    .shadow(color: Color.black.opacity(0.08), radius: 8, x: 0, y: 4)
-                    .padding(.top, 20)
-
-                    
-                    
-                    
-                    
-                    
+                        .overlay(
+                            RoundedRectangle(cornerRadius: 18)
+                                .stroke(
+                                    Color.white.opacity(
+                                        colorScheme == .dark ? 0.12 : 0.25
+                                    ),
+                                    lineWidth: 1
+                                )
+                        )
+                        .shadow(
+                            color: .black.opacity(
+                                colorScheme == .dark ? 0.4 : 0.15
+                            ),
+                            radius: 10,
+                            y: 5
+                        )
+                        .padding(.top, 20)
+                    }
                 }
                 .padding(20)
                 .background(
                     RoundedRectangle(cornerRadius: 20)
-                        .fill(Color.white.opacity(0.15))
+                        .fill(
+                            Color.white.opacity(
+                                colorScheme == .dark ? 0.08 : 0.15
+                            )
+                        )
                 )
-                .shadow(color: Color.black.opacity(0.15),
-                        radius: 10,
-                        x: 0,
-                        y: 8)
 
+                .shadow(
+                    color: .black.opacity(
+                        colorScheme == .dark ? 0.4 : 0.15
+                    ),
+                    radius: 10,
+                    y: 8
+                )
 
                 Spacer()
-                
-                  }
-                  .frame(height: 600)
-                  .padding(20)
-
-              }
+            }
+            .frame(height: 600)
+            .padding(20)
         }
-        
-      
+    }
+
+    // MARK: - Detail Row Helper
+    private func detailRow(icon: String, title: String, value: String) -> some View {
+        HStack(spacing: 10) {
+            Image(systemName: icon)
+                .foregroundColor(.blue)
+
+            Text(title)
+                .font(.callout)
+
+            Spacer()
+
+            Text(value)
+                .font(.callout)
+                .foregroundStyle(.secondary)
+        }
+        .padding(5)
+    }
 }
 
-#Preview {
+#Preview("Light Mode") {
     let vm = MainAppViewModel(context: ModelContext(ModelContainer.preview))
     CurrentWeatherView()
         .environmentObject(vm)
+        .preferredColorScheme(.light)
+}
+
+#Preview("Dark Mode") {
+    let vm = MainAppViewModel(context: ModelContext(ModelContainer.preview))
+    CurrentWeatherView()
+        .environmentObject(vm)
+        .preferredColorScheme(.dark)
 }

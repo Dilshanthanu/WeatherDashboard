@@ -12,6 +12,8 @@ struct NoDataView: View {
     let message: String
     let systemImage: String
 
+    @Environment(\.colorScheme) private var colorScheme
+
     var body: some View {
         VStack(spacing: 14) {
             Image(systemName: systemImage)
@@ -24,13 +26,25 @@ struct NoDataView: View {
 
             Text(message)
                 .font(.footnote)
-                .foregroundColor(.secondary)
+                .foregroundStyle(.secondary)
                 .multilineTextAlignment(.center)
         }
         .padding(24)
-        .background(Color.clear) 
-        .cornerRadius(20)
-        .shadow(radius: 6)
+        .background(
+            RoundedRectangle(cornerRadius: 20)
+                .fill(
+                    Color.white.opacity(
+                        colorScheme == .dark ? 0.08 : 0.15
+                    )
+                )
+        )
+        .shadow(
+            color: .black.opacity(
+                colorScheme == .dark ? 0.45 : 0.15
+            ),
+            radius: 6,
+            y: 4
+        )
         .padding()
     }
 }

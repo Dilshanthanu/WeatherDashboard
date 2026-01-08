@@ -1,10 +1,9 @@
 import SwiftUI
 import MapKit
-import SwiftData
 
 struct MapView: View {
     @EnvironmentObject var vm: MainAppViewModel
-    @State private var cameraPosition: MapCameraPosition = .automatic
+    @Environment(\.colorScheme) private var colorScheme
 
     var body: some View {
         ZStack {
@@ -12,67 +11,79 @@ struct MapView: View {
 
             VStack(spacing: 0) {
 
-                Map(position: $cameraPosition) {
-                    UserAnnotation()
-                    ForEach(vm.pois) { poi in
-                        Marker(
-                            poi.name,
-                            coordinate: CLLocationCoordinate2D(
-                                latitude: poi.latitude,
-                                longitude: poi.longitude
-                            )
+                // MARK: - Map
+                Map(
+                    coordinateRegion: $vm.mapRegion,
+                    annotationItems: vm.pois
+                ) { poi in
+                    MapAnnotation(
+                        coordinate: CLLocationCoordinate2D(
+                            latitude: poi.latitude,
+                            longitude: poi.longitude
                         )
+                    ) {
+                        VStack(spacing: 2) {
+                            Image(systemName: "mappin.circle.fill")
+                                .font(.title2)
+                                .foregroundColor(.red)
+
+                            Text(poi.name)
+                                .font(.caption)
+                                .fixedSize()
+                                .foregroundStyle(.primary)
+                        }
                     }
                 }
                 .frame(height: 360)
-                .onChange(of: vm.pois) { _, newPois in
-                    guard let first = newPois.first else { return }
 
-                    cameraPosition = .region(
-                        MKCoordinateRegion(
-                            center: CLLocationCoordinate2D(
-                                latitude: first.latitude,
-                                longitude: first.longitude
-                            ),
-                            span: MKCoordinateSpan(
-                                latitudeDelta: 0.05,
-                                longitudeDelta: 0.05
-                            )
-                        )
-                    )
-                }
-
+                // MARK: - Section Header
                 Text("Top 5 Tourist Attractions in \(vm.activePlaceName)")
                     .font(.headline)
-                    .foregroundColor(.white)
+                    .foregroundStyle(.primary)
                     .frame(maxWidth: .infinity)
-                    .padding(.vertical, 10)
-                    .background(Color.purple)
+                    .padding(.vertical, 12)
+                    .background(
+                        Color.white.opacity(
+                            colorScheme == .dark ? 0.08 : 0.15
+                        )
+                    )
 
+                // MARK: - POI List
                 ScrollView {
                     VStack(alignment: .leading, spacing: 14) {
                         ForEach(vm.pois) { poi in
-                            HStack(spacing: 12) {
-                                Image(systemName: "mappin.circle.fill")
-                                    .font(.system(size: 20))
-                                    .foregroundColor(.orange)
+                            POIRow(name: poi.name)
+                                .onLongPressGesture {
+                                    Task {
+                                        try await vm.search(for: poi.name)
+                                    }
+                                }
 
-                                Text(poi.name)
-                                    .font(.body)
-                                    .onLongPressGesture {
-                                        Task {
-                                                 try await vm.search(for: poi.name)
-                                              }
-                                       }
-
-
-                                Spacer()
-                            }
+                            Divider()
+                                .opacity(colorScheme == .dark ? 0.4 : 0.8)
                         }
                     }
                     .padding()
                 }
+                .background(
+                    RoundedRectangle(cornerRadius: 20)
+                        .fill(
+                            Color.white.opacity(
+                                colorScheme == .dark ? 0.06 : 0.12
+                            )
+                        )
+                )
+                .shadow(
+                    color: .black.opacity(
+                        colorScheme == .dark ? 0.45 : 0.15
+                    ),
+                    radius: 10,
+                    y: 6
+                )
+                .padding()
             }
         }
     }
 }
+
+
